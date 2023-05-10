@@ -1,22 +1,22 @@
 #
 #   It runs in multithreaded mode when the number of input functions is greater than the number
-#   of available CPU cores to avoid thread overuse. If more threads are running than the CPU 
-#   can handle, this can result in lower performance due to the cost of switching between 
+#   of available CPU cores to avoid thread overuse. If more threads are running than the CPU
+#   can handle, this can result in lower performance due to the cost of switching between
 #   threads and competing for CPU resources.
 #
 #   Instead, when using multithreaded mode, each process will run on a separate CPU core,
 #   which can increase performance on systems with multiple available CPU cores and prevent
 #   thread overload.
-#   
-#   The function first determines the maximum number of threads to use based on the max_threads 
-#   argument or the number of CPU cores if not specified. Then, it creates a ThreadPoolExecutor 
+#
+#   The function first determines the maximum number of threads to use based on the max_threads
+#   argument or the number of CPU cores if not specified. Then, it creates a ThreadPoolExecutor
 #   with the specified number of threads.
 #
-#   Next, it executes the functions in parallel using executor.submit() method. If the function 
+#   Next, it executes the functions in parallel using executor.submit() method. If the function
 #   is a tuple, it extracts the function and arguments and passes them to executor.submit().
 #
 #   After executing all the functions, the function waits for them to complete using the as_completed()
-#   function. It then processes the results and stores them in a list. If an exception is raised 
+#   function. It then processes the results and stores them in a list. If an exception is raised
 #   during execution, it is caught and stored in the list of results.
 #
 #   Finally, the function returns the list of results obtained by executing the functions in parallel.
@@ -61,7 +61,7 @@ def execute_concurrency(functions: List[Union[callable, Tuple[callable, tuple]]]
 
     return results
 
-def execute_in_threads(functions: List[Union[callable, Tuple[callable, tuple]]], 
+def execute_in_threads(functions: List[Union[callable, Tuple[callable, tuple]]],
                        max_threads: int = None
                        ) -> List[Any]:
     """The execute_in_threads function takes a list of functions or tuples of function and arguments,
@@ -79,7 +79,7 @@ def execute_in_threads(functions: List[Union[callable, Tuple[callable, tuple]]],
 
     List[Any]: A list of results obtained by executing the functions in parallel
     """
-    
+
     # determine the maximum number of threads
     if max_threads is None:
         max_threads = cpu_count()
@@ -87,17 +87,7 @@ def execute_in_threads(functions: List[Union[callable, Tuple[callable, tuple]]],
     # create an executor pool
     with ThreadPoolExecutor(max_workers=max_threads) as executor:
         # execute functions in parallel
-        futures = []
-        for func in functions:
-            try:
-                if isinstance(func, tuple):
-                    f, args = func
-                    futures.append(executor.submit(f, *args))
-                else:
-                    futures.append(executor.submit(func))
-            except ValueError as err:
-                raise ValueError(f"ThreadPoolExecutor: {err}, arg: {func}")
-    return futures
+        return execute_with_executor(executor, functions)
 
 
 def execute_in_processes(functions: List[Union[callable, Tuple[callable, tuple]]],
@@ -118,15 +108,31 @@ def execute_in_processes(functions: List[Union[callable, Tuple[callable, tuple]]
         max_processes = cpu_count()
 
     with ProcessPoolExecutor(max_workers=max_processes) as executor:
-        futures = []
-        for func in functions:
-            try:
-                if isinstance(func, tuple):
-                    f, args = func
-                    futures.append(executor.submit(f, *args))
-                else:
-                    futures.append(executor.submit(func))
-            except ValueError as err:
-                raise ValueError(f"ThreadPoolExecutor: {err}, arg: {func}")
+        # execute functions in parallel
+        return execute_with_executor(executor, functions)
 
+
+def execute_with_executor(executor, functions):
+    """
+    Executes the given functions using the provided executor.
+
+    Args:
+        executor: The executor to use for parallel execution.
+        functions: A list of functions or tuples of function and arguments.
+
+    Returns:
+        List of futures representing the execution of the functions.
+    """
+
+    futures = []
+    for func in functions:
+        try:
+            if isinstance(func, tuple):
+                f, args = func
+                futures.append(executor.submit(f, *args))
+            else:
+                futures.append(executor.submit(func))
+        except ValueError as err:
+            raise ValueError(f"{type(executor).__name__}: {err}, arg: {func}")
+        
     return futures
