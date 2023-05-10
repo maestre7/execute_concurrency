@@ -112,7 +112,7 @@ def execute_in_processes(functions: List[Union[callable, Tuple[callable, tuple]]
         return execute_with_executor(executor, functions)
 
 
-def execute_with_executor(executor: Executor, 
+def execute_with_executor(executor: Executor,
                           functions: List[Union[callable, Tuple[callable, tuple]]]
                           ) -> List[Future]:
     """
@@ -136,5 +136,5 @@ def execute_with_executor(executor: Executor,
                 futures.append(executor.submit(func))
         except ValueError as err:
             raise ValueError(f"{type(executor).__name__}: {err}, arg: {func}")
-        
+
     return futures
