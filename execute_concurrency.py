@@ -24,7 +24,7 @@
 
 from os import cpu_count
 from typing import List, Tuple, Union, Any
-from concurrent.futures import ThreadPoolExecutor, ProcessPoolExecutor, as_completed
+from concurrent.futures import ThreadPoolExecutor, ProcessPoolExecutor, as_completed, Executor, Future
 
 
 def execute_concurrency(functions: List[Union[callable, Tuple[callable, tuple]]],
@@ -112,7 +112,9 @@ def execute_in_processes(functions: List[Union[callable, Tuple[callable, tuple]]
         return execute_with_executor(executor, functions)
 
 
-def execute_with_executor(executor, functions):
+def execute_with_executor(executor: Executor, 
+                          functions: List[Union[callable, Tuple[callable, tuple]]]
+                          ) -> List[Future]:
     """
     Executes the given functions using the provided executor.
 
